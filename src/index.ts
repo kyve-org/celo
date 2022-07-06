@@ -1,4 +1,4 @@
-import KYVE from '@kyve/core';
+import KYVE, { Item } from '@kyve/core';
 import { fetchBlock } from './utils';
 import { name, version } from '../package.json';
 
@@ -10,15 +10,13 @@ KYVE.metrics.register.setDefaultLabels({
 });
 
 class KyveCelo extends KYVE {
-  public async getDataItem(key: number): Promise<{ key: number; value: any }> {
+  public async getDataItem(key: string): Promise<Item> {
     let block;
 
     try {
-      block = await fetchBlock(this.pool.config.rpc, key);
+      block = await fetchBlock(this.pool.config.rpc, +key);
     } catch (err) {
-      this.logger.warn(
-        `⚠️  EXTERNAL ERROR: Failed to fetch block ${key}. Retrying ...`
-      );
+      this.logger.warn(`Failed to fetch block ${key}. Retrying ...`);
 
       throw err;
     }
@@ -26,6 +24,18 @@ class KyveCelo extends KYVE {
     if (!block) throw new Error();
 
     return { key, value: block };
+  }
+
+  public async getNextKey(key: string): Promise<string> {
+    if (key) {
+      return (parseInt(key) + 1).toString();
+    }
+
+    return '0';
+  }
+
+  public async formatValue(value: any): Promise<string> {
+    return value.hash;
   }
 }
 
